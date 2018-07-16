@@ -1,0 +1,2 @@
+DOWNLOAD HG19 REFERENCE FILE FROM HIPSTR GITHUB
+run split_files.sh and create_reference.sh to seperate each chrosome by regions

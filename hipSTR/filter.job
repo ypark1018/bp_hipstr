@@ -1,0 +1,35 @@
+#!/bin/bash
+#$ -V
+#$ -S /bin/bash
+#$ -N filter
+#$ -cwd
+#$ -o /u/home/p/parkyj/nobackup-eeskin2/bipolar_hipSTR/orig/filtered/filter.out
+#$ -j y
+#$ -m n
+#$ -l h_data=5G,h_rt=10:00:00
+#$ -t 1-22
+
+#need to load vcftools module first
+
+chr=$SGE_TASK_ID
+dir=/u/home/p/parkyj/nobackup-eeskin2/bipolar_hipSTR/orig/
+vcf=$dir/chr$chr.hipSTR.vcf.gz
+out_dir=/u/home/p/parkyj/nobackup-eeskin2/bipolar_hipSTR/orig/filtered
+filter=/u/home/p/parkyj/softwares/HipSTR/scripts/filter_vcf.py
+#these outliers wil be removed from our results
+outliers=bp_outliers
+
+python $filter \
+--vcf $vcf \
+--min-call-qual 0.9 \
+--max-call-flank-indel 0.15 \
+--max-call-stutter 0.15 \
+--min-loc-calls 409 \
+> $out_dir/chr$chr.tmp
+
+
+vcftools --gzvcf chr$chr.tmp --remove $outliers --recode --out chr$chr
+
+mv chr$chr.recode.vcf chr$chr.filtered.vcf
+rm -f chr$chr.tmp
+gzip chr$chr.filtered.vcf

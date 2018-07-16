@@ -1,0 +1,36 @@
+#!/bin/bash
+#$ -V
+#$ -S /bin/bash
+#$ -N hipSTR_chr2
+#$ -cwd
+#$ -o /u/home/p/parkyj/nobackup-eeskin2/bipolar_hipSTR/orig/hipSTR.chr$TASK_ID.out
+#$ -e /u/home/p/parkyj/nobackup-eeskin2/bipolar_hipSTR/orig/hipSTR.chr$TASK_ID.err
+#$ -j y
+#$ -m e
+#$ -l h_data=20G,h_rt=336:00:00,highp
+#$ -t 1-226
+
+#The reference is divided into 226 separate regions
+#location: /u/home/p/parkyj/nobackup-eeskin2/scripts/hipSTR/reference/chr*
+region_list=/u/home/p/parkyj/nobackup-eeskin2/scripts/hipSTR/reference/hg19.hipstr.reference.list
+chr=$(sed "${SGE_TASK_ID}q;d" $region_list | cut -d" " -f 1)
+part=$(sed "${SGE_TASK_ID}q;d" $region_list | cut -d" " -f 2)
+if (($part < 10))
+then
+    part="0$part"
+fi
+
+bams1=/u/nobackup/eeskin2/jhsul/bipolar/processed_BAM_hdd
+bams2=/u/nobackup/eeskin2/jhsul/bipolar/processed_BAMs_icnn
+regions=/u/home/p/parkyj/nobackup-eeskin2/scripts/hipSTR/reference/chr$chr/chr$chr.hg19.hipstr_reference.$part
+fasta=/u/home/p/parkyj/nobackup-eeskin2/scripts/hipSTR/fasta/all_chroms.fa
+output=/u/home/p/parkyj/nobackup-eeskin2/bipolar_hipSTR/orig/chr$chr.$part.hipSTR.vcf.gz
+#snpvcf=/u/home/p/parkyj/nobackup-eeskin2/bipolar_hipSTR/chr22.snp.vcf.gz
+
+HipSTR \
+--bams $(echo `ls -d -1 $bams1/**/* | grep .bam$` | sed "s/ /,/g"),$(echo `ls -d -1 $bams2/**/* | grep .bam$` | sed "s/ /,/g") \
+--fasta $fasta \
+--regions $regions \
+--str-vcf $output \
+--log chr$chr.hipSTR.log \
+--chrom chr$chr

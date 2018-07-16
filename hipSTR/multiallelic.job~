@@ -1,0 +1,21 @@
+#!/bin/bash
+#$ -V
+#$ -S /bin/bash
+#$ -N multi
+#$ -cwd
+#$ -o /u/home/p/parkyj/nobackup-eeskin2/bipolar_hipSTR/orig/filtered/multiallelic/multiallelic.out
+#$ -j y
+#$ -m n
+#$ -l h_data=5G,h_rt=5:00:00
+#$ -t 1-22
+
+f_dir=/u/home/p/parkyj/nobackup-eeskin2/bipolar_hipSTR/orig/filtered
+output_dir=/u/home/p/parkyj/nobackup-eeskin2/bipolar_hipSTR/orig/filtered/multiallelic
+
+chr=$SGE_TASK_ID
+vcf_file=$f_dir/chr$chr.filtered.me.recode.vcf.gz
+
+#process STR loci
+vcftools --gzvcf $vcf_file --min-alleles 2 --recode --out $output_dir/chr$chr.multiallelic
+
+gzip chr$chr.multiallelic.recode.vcf

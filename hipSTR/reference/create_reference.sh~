@@ -1,0 +1,4 @@
+for x in `seq 1 22`; do \
+for y in $(seq 1 $(($(ls chr$x | wc -l)-1))); do \
+echo $x $y >> hg19.hipstr.reference.list; \
+done; done
