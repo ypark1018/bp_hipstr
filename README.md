@@ -12,9 +12,9 @@ This document is the guide to calling STR using hipSTR and perform preliminary a
 
 Contact Youngjun Park at parkyj2350@gmail.com for any questions.
 
-########################################
+
 #              1. hipSTR               #
-########################################
+
 JOB FILE: ./hipSTR/hipSTR.job
     	  ./hipSTR/concat.sh
 REFERENCE: https://github.com/tfwillems/HipSTR
@@ -32,9 +32,9 @@ If SNP vcf is accessible, we can use it to get a more accurate phasing informati
 
 After hipSTR.job is finished, combine all vcfs for each chromosome using catcat.sh
 
-########################################
+
 #                2. QC                 #
-########################################
+
 JOB FILE: ./hipSTR/filter.job
 REFERENCE: https://github.com/tfwillems/HipSTR
 
@@ -53,9 +53,9 @@ filter_vcf.py
 --max-call-stutter	total number of reads at a locus with what HipSTR thinks is a stutter artifact
 --min-loc-calls		minimum number of calls required for each loci (call rate)
 
-########################################
+
 #     3. Isolate Polymorphic Loci      #
-########################################
+
 JOB FILE: ./hipSTR/multiallelic.job
     	  ./hipSTR/biallelic.job
 INPUT:
@@ -66,9 +66,9 @@ INPUT:
 NOTE:
 Make sure vcftools is loaded. multiallelic.job filters for loci containing 2 or more unique alleles; biallelic.job filters for loci containing 2 unique alleles.
 
-########################################
+
 #       4. Identify ME/Correct         #
-########################################
+
 JOBFILE: ./mendel_errors/get.me.job
 	 ./mendel_errors/set.me.missing.job
 	 ./mendel_errors/me.sh
@@ -104,9 +104,9 @@ Compiled output will be in file called mendel.errors
 
 Use set.me.missing.job to set the genotypes with mendelian errors to missing and filter out the loci with missing rate > 10%.
 
-########################################
+
 #      5. Minor Allele Frequency       #
-########################################
+
 JOB FILE: ./analyses/minor_allele.sh
 
 PYTHON SCRIPT: minor_allele.py
@@ -114,9 +114,9 @@ PYTHON SCRIPT: minor_allele.py
 NOTE:
 self explanatory - acquire MAF for each loci. For multiallelic variants MAF is the frequency of second most prevalent allele in a variant
 
-########################################
+
 #          6. Heterozygosity           #
-########################################
+
 JOB FILE: ./analyses/heterozygosity.sh
 
 PYTHON SCRIPT: heterozygosity.py
@@ -129,9 +129,9 @@ INPUT:
 NOTE:
 self explanatory - acquire heterozygosity for each variant
 
-########################################
+
 #     7. De Novo Mutation Analysis     #
-########################################
+
 JOB FILE: ./denovo/denovovcf.job
     	  ./denovo/denovo.job
 	  ./denovo/denovo.SNV.job
@@ -158,9 +158,9 @@ denovo.job
 NOTE:
 denovovcf.job filters out the VCF after QC with the list of loci present after correcting genotypes with mendelian errors to missing (output of set.me.missing.job). After filtering, only loci with little mendelian inconsistencies should be left.
 
-########################################
+
 #          8. Burden Analysis          #
-########################################
+
 JOB FILE: ./vep/vep.str.job
     	  ./vep/vep_parser.job
 	  ./vep/map.variants.v2.job
