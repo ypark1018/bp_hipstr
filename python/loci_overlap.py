@@ -1,0 +1,69 @@
+#determine which STRs were detected as indels in GATK
+#ignore indels of length 1
+from collections import defaultdict
+import sys
+
+STR_file = sys.argv[1]
+indel_file = sys.argv[2]
+
+
+STR = []
+with open(STR_file) as f:
+    alengths = f.readlines()
+    for allele in alengths:
+        a = allele.strip().split("\t")
+        a = a[:3] + [a[3].split(";")[2][4:]]
+        #int(STR_locus[3].split(";")[2][4:])
+        STR.append(a)
+
+
+indel = defaultdict(list)
+with open(indel_file) as g:
+    reflines = g.readlines()
+    for line in reflines:
+        b = line.strip().split("\t")
+        indel[b[0]].append(b)
+
+overlap_output = sys.argv[2] + ".overlap"
+coverage_output = sys.argv[2] + ".cov"
+
+ov_output = open(overlap_output, 'w+')
+ov_output.truncate()
+ov_output.write("#SV\tPOS\tREF\tEND\tSV2\tPOS\tREF\tALT\n")
+
+cov_output = open(coverage_output, 'w+')
+cov_output.truncate
+cov_output.write("#CHR\tPOS\tEND\tVAR_LEN\tCOVERAGE\tVAR_PER_100BP\n")
+
+for STR_locus in STR:
+    ov_flag = 0
+    str_length = int(STR_locus[3]) - int(STR_locus[1])
+    indel_start = -1
+    indel_end = -1
+    n_indel = 0
+    for indel_locus in indel[STR_locus[0]]:
+        indel_alleles = [indel_locus[2]] + indel_locus[3].split(',')
+        allele_end = int(indel_locus[1]) + max(len(allele) for allele in indel_alleles)
+        if allele_end >= int(STR_locus[1]) and int(indel_locus[1]) <= int(STR_locus[3]):
+            if indel_start == -1:
+                indel_start = int(indel_locus[1])
+            else:
+                indel_end = int(indel_locus[1])
+            ov_output.write('\t'.join(STR_locus) + '\t' + '\t'.join(indel_locus) + '\n')
+            ov_flag = 1
+            n_indel += 1
+            indel_last = indel_locus
+    if ov_flag:
+        indel_alleles = [indel_last[2]] + indel_last[3].split(',')
+        if indel_end == -1:
+            indel_end = indel_last[1] + max(len(allele) for allele in indel_alleles)
+            if indel_end > int(STR_locus[3]):
+                indel_end = int(STR_locus[3])
+        else:
+            indel_end = indel_end + max(len(allele) for allele in indel_alleles)
+            if indel_end > int(STR_locus[3]):
+                indel_end = int(STR_locus[3])
+            if indel_start < int(STR_locus[1]):
+                indel_start = int(STR_locus[1])
+        
+        cov_output.write('\t'.join(STR_locus[:2]) + '\t' + STR_locus[3] + '\t' + str(str_length) + '\t' + str((indel_end-indel_start)/float(str_length)) + '\t' + str(n_indel/(float(str_length)/100)) + '\n')
