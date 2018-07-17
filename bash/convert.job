@@ -1,0 +1,45 @@
+#!/bin/bash
+#$ -V
+#$ -S /bin/bash
+#$ -N convert_STR
+#$ -cwd
+#$ -o /u/home/p/parkyj/nobackup-eeskin2/bipolar_hipSTR/orig/19ind/filtered/converted/convert.out
+#$ -e /u/home/p/parkyj/nobackup-eeskin2/bipolar_hipSTR/orig/19ind/filtered/converted/convert.err
+#$ -j y
+#$ -m n
+#$ -l h_data=10G,h_rt=10:00:00,highp
+#$ -t 1-22
+
+#chr3.19ind.filtered.vcf.gz
+chr=$SGE_TASK_ID
+vcf_dir=/u/home/p/parkyj/nobackup-eeskin2/bipolar_hipSTR/orig/19ind/filtered
+vcf=$vcf_dir/chr$chr.19ind.filtered.vcf.gz
+out_dir=/u/home/p/parkyj/nobackup-eeskin2/bipolar_hipSTR/orig/19ind/filtered/converted
+out_prefix=chr$chr.19ind.filtered
+
+java_dir=/u/home/p/parkyj/nobackup-eeskin2/scripts/java
+java=ConvertVCFToOldSTRFormat
+
+#python scripts
+python_dir=/u/home/p/parkyj/nobackup-eeskin2/scripts/python
+str_markers=$python_dir/STR_Markers.txt
+convert_marker=$python_dir/convert_marker.py
+apply_key=$python_dir/apply_key.py
+
+converted_file=all_chr.converted
+
+zcat $vcf | sed "s/.\/.:.:.:.:.:.:.:.:.:.:.:.:.:.:././g" > chr$chr.tmp
+java -Xmx1G -cp $java_dir $java chr$chr.tmp $out_prefix
+#rm -f chr$chr.tmp
+if [ ! -f $converted_file ]; then
+    head -n 1 $out_prefix.allele.length.long.txt > $converted_file
+fi
+tail -n +2 $out_prefix.allele.length.long.txt > temp.chr$chr.txt
+sed "s/chr${chr}://g" temp.chr$chr.txt > chr$chr.length
+grep D${chr}S $str_markers > chr$chr.markers
+cut -f2 chr$chr.tmp | grep -v "#" | grep -v P > chr$chr.keys
+#keys made
+python $convert_marker chr$chr.keys chr$chr.markers | tr -d "\"" > chr$chr.final.key
+#update keys
+python $apply_key chr$chr.length chr$chr.final.key | grep -v NAN > CONVERTED.chr$chr
+rm -f chr$chr.markers chr$chr.keys chr$chr.length chr$chr.final.key temp.chr$chr.txt chr$chr.tmp
