@@ -1,0 +1,42 @@
+#!/bin/bash
+#$ -V
+#$ -S /bin/bash
+#$ -N vep_filter
+#$ -cwd
+#$ -o /u/home/p/parkyj/nobackup-eeskin2/bipolar_hipSTR/orig/filtered/multiallelic/vep/vep_filter.out
+#$ -j y
+#$ -m n
+#$ -l h_data=5G,h_rt=1:00:00
+#$ -t 1-22
+
+chr=$SGE_TASK_ID
+
+#filter vcf with specified locus -> *_set
+#chr9.multiallelic.recode.gigiimp.missrst.vep.vcf.gz
+#rv_set in format of [chr] [locus]
+dir=/u/home/p/parkyj/nobackup-eeskin2/bipolar_hipSTR/orig/filtered/multiallelic/vep
+in_vcf=$dir/chr$chr.multiallelic.recode.gigiimp.missrst.vep.vcf.gz
+gene_set=$dir/variants/chr$chr.mapped_variants.txt
+rv_set=$dir/chr$chr.combined.rv
+#rv_set=$dir/chr$chr.1000GP.rv
+gene_vcf=$dir/chr$chr.filtered.vep.vcf
+rv_vcf=$dir/chr$chr.rv.filtered.vep.vcf
+cm_vcf=$dir/chr$chr.cm.filtered.vep.vcf
+
+#cut -f1,2 $gene_set > chr$chr.loci.tmp
+#vcftools --gzvcf $in_vcf --positions chr$chr.loci.tmp --recode --recode-INFO-all --out chr$chr.tmp
+#mv chr$chr.tmp.recode.vcf $gene_vcf
+#rm -f chr$chr.loci.tmp
+
+rm -f $rv_vcf.gz
+rm -f $cm_vcf.gz
+
+vcftools --gzvcf $gene_vcf.gz --positions $rv_set --recode --recode-INFO-all --out chr$chr.tmp 
+mv chr$chr.tmp.recode.vcf $rv_vcf
+
+vcftools --gzvcf $gene_vcf.gz --exclude-positions $rv_set --recode --recode-INFO-all --out chr$chr.tmp
+mv chr$chr.tmp.recode.vcf $cm_vcf
+
+#gzip $gene_vcf
+gzip $rv_vcf
+gzip $cm_vcf

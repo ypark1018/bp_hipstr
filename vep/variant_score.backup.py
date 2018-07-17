@@ -1,0 +1,158 @@
+#parse vep vcf file for variants at each locus
+#allSTR - looks at all STR score 1 if alternate allele
+#del - looks at deleterious regions score 1 if deleterious allele
+
+import sys
+
+#change this flag to for all STR sum vs deleterious STR sum
+ALL_STR = True
+HIGH = 3
+MODERATE = 2
+LOW = 1
+MODIFIER = 0
+def main():
+    if len(sys.argv) < 3:
+        sys.exit("USAGE: python variant_score.py [input vep vcf] [output prefix]")
+    vep = []
+    if ".gz" in sys.argv[1]:
+        import gzip
+        with gzip.open(sys.argv[1]) as f:
+            lines=f.readlines()
+            for x in lines:
+                a = x.strip().split("\t")
+                if "##" not in a[0]:
+                    vep.append(a)
+    else:
+        with open(sys.argv[1]) as f:
+            lines=f.readlines()
+            for x in lines:
+                a = x.strip().split("\t")
+                if "##" not in a[0]:
+                    vep.append(a)
+    annot_output = sys.argv[2] + ".annot" #output file name
+    f_output = open(annot_output, 'w+')
+    f_output.truncate()
+    f_output.write("#CHR POS ALLELE IMPACT VARIANT GENE\n")
+    
+    allSTR_score_output = sys.argv[2] + ".allSTR.sum"
+    g_output = open(allSTR_score_output, 'w+')
+    g_output.truncate()
+    
+    del_score_output = sys.argv[2] + ".del.sum"
+    h_output = open(del_score_output, 'w+')
+    h_output.truncate()
+
+    allSTR_sum_scores = []
+    del_sum_scores = []
+    for locus in vep:
+        if "#" in locus[0]:
+            #the sum score output will be tab delimited (modify if needed)
+            g_output_s = "\t".join(locus[:2]) + "\t" + "\t".join(locus[9:]) + "\n" #the columns will indicate each individual
+            g_output.write(g_output_s)
+            h_output.write(g_output_s)
+            #initialize all scores equal to 0
+            allSTR_sum_scores = [0] * len(locus[9:])
+            del_sum_scores = [0] * len(locus[9:])
+            continue
+
+        l_output = [] #list holds output per locus
+        l_output.extend((locus[0], locus[1]))
+        alleles = [] #list holds reference and alternative alleles
+        alleles.append(locus[3])
+        alleles.extend(locus[4].split(","))
+        vep_alleles = [] #list holds deleterious alleles determined by vep
+
+        variants = locus[7].split(",")
+        genelist = {}
+        for variant in variants:
+            field = variant.split("|")
+            if "CSQ=" in field[0]:
+                field[0] = field[0].replace("CSQ=", "")
+            if field[3] == '':
+                field[3] = "Not_Mapped"
+
+            if field[2] == "HIGH":
+                    impact = HIGH
+            elif field[2] == "MODERATE":
+                    impact = MODERATE
+            elif field[2] == "LOW":
+                    impact = LOW
+            else:
+                    impact = MODIFIER
+
+            if field[0] not in vep_alleles and impact > 0:
+                vep_alleles.append(field[0])
+
+            if field[3] not in genelist.keys():
+                genelist[field[3]] = [field[0], field[1], field[2], impact]
+            else:
+                #compare impact level
+                if genelist[field[3]][3] < impact:
+                    genelist[field[3]] = [field[0], field[1], field[2], impact]
+
+        del_flag = 0
+        g_output.write(locus[0] + "\t" + locus[1])
+        if vep_alleles:
+            del_flag = 1
+            h_output.write(locus[0] + "\t" + locus[1])
+        #sum scores
+        for n,indv in enumerate(locus[9:]):
+            genotype = (indv.split(":")[0]).split("/")
+            all_genotype = [] #allSTR
+            del_genotype = [] #del
+            if "." in genotype:
+                all_genotype = [0, 0]
+                del_genotype = [0, 0]
+            else:
+                for a in genotype:
+                    allele = int(a)
+
+                    if allele > 0:
+                        all_allele = 1
+                    else:
+                        all_allele = 0
+                    all_genotype.append(all_allele)
+
+                    #########################
+                    # deleterious STRs only #
+                    #########################
+                    if del_flag == 1:
+                    #get rid of the 1st base because vep doesn't include
+                        if alleles[allele][1:] in vep_alleles:
+                    #see if the allele is deleterious
+                            del_allele = 1
+                            if allele == 0:
+                            #check if a reference allele is deleterious
+                                print "DELETERIOUS REFERENCE ALLELE: " + locus[0] + ":" + locus[1]
+                        #one point for each deleterious allele
+                        #sum_scores[n] += 1
+                        else:
+                            del_allele = 0
+                        del_genotype.append(del_allele)
+                    ########################
+                    ########################
+            #one point as long as one allele is deleterious
+            if 1 in all_genotype:
+                allSTR_sum_scores[n] += 1
+            if 1 in del_genotype:
+                del_sum_scores[n] += 1
+            #write allSTR
+
+            g_output.write("\t" + "/".join(str(x) for x in all_genotype))
+            #write del
+            if del_flag == 1:
+                h_output.write("\t" + "/".join(str(x) for x in del_genotype))
+            ######
+        g_output.write("\n")
+        if del_flag == 1:
+            h_output.write("\n")
+
+        for gene in genelist.keys():
+            l_output.extend((genelist[gene][0], genelist[gene][1], genelist[gene][2], gene))
+        f_output.write(" ".join(l_output)+ '\n')
+    #output variant sum scores
+    g_output.write("SUM\tSCORES:\t" + "\t".join(str(x) for x in allSTR_sum_scores))
+    h_output.write("SUM\tSCORES:\t" + "\t".join(str(x) for x in del_sum_scores))
+
+if __name__ == "__main__":
+    main()

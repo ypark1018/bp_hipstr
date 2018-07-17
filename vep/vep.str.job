@@ -1,0 +1,39 @@
+#!/bin/bash
+#$ -V
+#$ -S /bin/bash
+#$ -N vep
+#$ -cwd
+#$ -o /u/home/p/parkyj/nobackup-eeskin2/bipolar_lobSTR/filtered/multiallelic/vep/vep.$JOB_ID.$TASK_ID.out
+#$ -e /u/home/p/parkyj/nobackup-eeskin2/bipolar_lobSTR/filtered/multiallelic/vep/vep.str.$JOB_ID.$TASK_ID.err
+#$ -j y
+#$ -m n
+#$ -l h_data=7G,h_rt=24:00:00,highp
+#$ -pe shared 4
+#$ -t 1-22
+
+PERL5LIB=/u/home/p/parkyj/vcftools_0.1.13/perl:/u/home/p/parkyj/mylib/lib/perl5
+
+chr=$SGE_TASK_ID
+java=/usr/bin/java
+javacp=~/scripts
+#/u/project/zarlab/jhsul/bipolar/varcall/java/.
+
+dir=/u/home/p/parkyj/nobackup-eeskin2/bipolar_lobSTR/filtered/multiallelic
+prefix=chr$chr.multiallelic.recode
+
+vepdir=/u/home/p/parkyj/scripts/ensembl-tools-release-87/scripts/variant_effect_predictor
+vep=$vepdir/variant_effect_predictor.pl
+cache=/u/home/p/parkyj/nobackup-eeskin2/scripts/perl/cache
+
+inputfile=$dir/$prefix.vcf.gz
+outdir=/u/home/p/parkyj/nobackup-eeskin2/bipolar_lobSTR/filtered/multiallelic/vep
+outputfile=$outdir/$prefix.vep.vcf
+outputannot=$outdir/$prefix.vep.annot.txt
+
+$vep --flag_pick --format vcf --force_overwrite --dir $cache --offline --sift b --polyphen b --regulatory --numbers --protein --symbol --ccds --canonical --biotype --check_existing --gmaf --maf_1kg --maf_esp --maf_exac --pubmed --vcf --buffer_size 10000 --input_file $inputfile --output_file $outputfile --fork 4
+
+gzip $outputfile
+
+$java -Xmx1G -cp $javacp ParseVEPVCFFile $outputfile.gz $outputannot
+
+#/u/project/zarlab/jhsul/bin/bam_to_fastq/bam_to_fastq_2

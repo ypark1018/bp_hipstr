@@ -1,0 +1,70 @@
+#!/bin/bash
+#$ -V
+#$ -S /bin/bash
+#$ -N var_score
+#$ -cwd
+#$ -o /u/home/p/parkyj/nobackup-eeskin2/bipolar_hipSTR/orig/filtered/multiallelic/vep/variant_score.out
+#$ -j y
+#$ -m n
+#$ -l h_data=5G,h_rt=2:00:00,highp
+#$ -t 1-22
+
+chr=$SGE_TASK_ID
+#variantscore=/u/home/p/parkyj/nobackup-eeskin2/scripts/vep/variant_score1.py
+variantscore1=/u/home/p/parkyj/nobackup-eeskin2/scripts/vep/variant_score.1.py
+variantscore2=/u/home/p/parkyj/nobackup-eeskin2/scripts/vep/variant_score.2.py
+variantscore3=/u/home/p/parkyj/nobackup-eeskin2/scripts/vep/variant_score.3.py
+
+dir=/u/home/p/parkyj/nobackup-eeskin2/bipolar_hipSTR/orig/filtered/multiallelic/vep
+#rv
+infile1=$dir/chr$chr.filtered.vep.vcf.gz
+infile2=$dir/chr$chr.rv.filtered.vep.vcf.gz
+infile3=$dir/chr$chr.cm.filtered.vep.vcf.gz
+
+outdir=/u/home/p/parkyj/nobackup-eeskin2/bipolar_hipSTR/orig/filtered/multiallelic/vep/variant_scores
+if [ ! -d "$outdir" ]; then
+    mkdir $outdir
+fi
+
+#output directories: first number corresponds to:
+#impact level: LOW=1,MODERATE=2,HIGH=3
+#second number corresponds to:
+#test: DEL=1,ALLELE SUM=2, ALLELE VAR=3
+#deleteriou allele
+python $variantscore1 $infile1 0 ${outdir}1_1/chr$chr
+python $variantscore1 $infile1 1 ${outdir}2_1/chr$chr
+python $variantscore1 $infile1 2 ${outdir}3_1/chr$chr
+
+python $variantscore1 $infile2 0 ${outdir}1_1/chr$chr.rv
+python $variantscore1 $infile2 1 ${outdir}2_1/chr$chr.rv
+python $variantscore1 $infile2 2 ${outdir}3_1/chr$chr.rv
+
+python $variantscore1 $infile3 0 ${outdir}1_1/chr$chr.cm
+python $variantscore1 $infile3 1 ${outdir}2_1/chr$chr.cm
+python $variantscore1 $infile3 2 ${outdir}3_1/chr$chr.cm
+
+#allele sum
+python $variantscore2 $infile1 0 ${outdir}1_2/chr$chr
+python $variantscore2 $infile1 1 ${outdir}2_2/chr$chr
+python $variantscore2 $infile1 2 ${outdir}3_2/chr$chr
+
+python $variantscore2 $infile2 0 ${outdir}1_2/chr$chr.rv
+python $variantscore2 $infile2 1 ${outdir}2_2/chr$chr.rv
+python $variantscore2 $infile2 2 ${outdir}3_2/chr$chr.rv
+
+python $variantscore2 $infile3 0 ${outdir}1_2/chr$chr.cm
+python $variantscore2 $infile3 1 ${outdir}2_2/chr$chr.cm
+python $variantscore2 $infile3 2 ${outdir}3_2/chr$chr.cm
+
+#allele variance
+python $variantscore3 $infile1 0 ${outdir}1_3/chr$chr
+python $variantscore3 $infile1 1 ${outdir}2_3/chr$chr
+python $variantscore3 $infile1 2 ${outdir}3_3/chr$chr
+
+python $variantscore3 $infile2 0 ${outdir}1_3/chr$chr.rv
+python $variantscore3 $infile2 1 ${outdir}2_3/chr$chr.rv
+python $variantscore3 $infile2 2 ${outdir}3_3/chr$chr.rv
+
+python $variantscore3 $infile3 0 ${outdir}1_3/chr$chr.cm
+python $variantscore3 $infile3 1 ${outdir}2_3/chr$chr.cm
+python $variantscore3 $infile3 2 ${outdir}3_3/chr$chr.cm

@@ -1,0 +1,32 @@
+#!/bin/bash
+#$ -V
+#$ -S /bin/bash
+#$ -N vep_rv
+#$ -cwd
+#$ -o /u/home/p/parkyj/nobackup-eeskin2/bipolar_hipSTR/orig/filtered/multiallelic/vep/rv_overlap.out
+#$ -j y
+#$ -m a
+#$ -l h_data=5G,h_rt=0:30:00
+#$ -t 1-22
+
+chr=$SGE_TASK_ID
+
+#filter vcf with specified locus -> *_set
+#chr9.multiallelic.recode.gigiimp.missrst.vep.vcf.gz
+#rv_set in format of [chr] [locus]
+dir=/u/home/p/parkyj/nobackup-eeskin2/bipolar_hipSTR/orig/filtered/multiallelic/vep
+MAF=/u/home/p/parkyj/nobackup-eeskin2/scripts/python/minor_allele.py
+
+#requires frq files acquired from vcftools --freq option
+#frq files for each chr for hipSTR vcf
+#frq files for each chr for 1KGP vcf <- the line below acheives this from whole genome vcf
+grep "chr$chr\s" $dir/1000genome/1000GP.frq > chr$chr.1000GP.frq
+
+python rv_overlap.py chr$chr.frq chr$chr.1000GP.frq > chr$chr.hipSTR.frq
+python $MAF chr$chr.hipSTR.frq 0.1 > chr$chr.hipSTR.maf
+python $MAF chr$chr.1000GP.frq  0.01 > chr$chr.1000GP.maf
+cut -f1,2 chr$chr.hipSTR.maf > chr$chr.hipSTR.rv
+cut -f1,2 chr$chr.1000GP.maf > chr$chr.1000GP.rv
+cat chr$chr.hipSTR.rv chr$chr.1000GP.rv | sort -k 2 -g > chr$chr.combined.rv
+
+rm -f *.log

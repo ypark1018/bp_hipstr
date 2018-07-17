@@ -1,0 +1,23 @@
+#!/bin/bash
+#$ -V
+#$ -S /bin/bash
+#$ -N map_var
+#$ -cwd
+#$ -o /u/home/p/parkyj/nobackup-eeskin2/bipolar_hipSTR/orig/filtered/multiallelic/vep/variants/map.variants.out
+#$ -j y
+#$ -m n
+#$ -l h_data=20G,h_rt=10:00:00,highp
+#$ -t 1-22
+
+#Modified to only include genes from the gene_file
+
+chr=$SGE_TASK_ID
+map=/u/home/p/parkyj/nobackup-eeskin2/scripts/vep/map.variants.py
+variant_file=/u/home/p/parkyj/nobackup-eeskin2/scripts/vep/genemap.use
+gene_file=/u/home/p/parkyj/nobackup-eeskin2/scripts/vep/UniqueGenesForJH_V3.txt
+
+dir=/u/home/p/parkyj/nobackup-eeskin2/bipolar_hipSTR/orig/filtered/multiallelic/vep/variants
+inputfile=$dir/chr$chr.multiallelic.recode.vep.annot.txt
+
+grep chr$chr $gene_file | cut -d' ' -f1 > chr$chr.gene.tmp
+python $map $inputfile $variant_file chr$chr.gene.tmp > $dir/chr$chr.mapped_variants.txt

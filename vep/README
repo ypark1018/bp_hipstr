@@ -1,0 +1,9 @@
+Files:
+genemap.txt.original: list of genes and associated disorders (original file)
+genemap.txt: list of genes and associated disorders (use for genemap.py)
+genemap.py: program that parses vep annotation file (vep.genemap) and matches with known disorder (genemap.txt)
+vep.genemap: data from *.vep.annot.txt in format: chr* [number] [HIGH|LOW|MODERATE] [GENE NAME]
+vep.variants.txt: output from genemap.py
+vep_annot.sh: script that creates vep.genemap from *.vep.annot.txt
+
+unique.variants.txt: list of unique genes fomr vep.variants.txt
