@@ -1,0 +1,27 @@
+#!/bin/bash
+#$ -V
+#$ -S /bin/bash
+#$ -N de_vcf
+#$ -cwd
+#$ -o /u/home/p/parkyj/nobackup-eeskin2/bipolar_hipSTR/orig/filtered/multiallelic/denovovcf.out
+#$ -e /u/home/p/parkyj/nobackup-eeskin2/bipolar_lobSTR/orig/filtered/multiallelic/denovovcf.err
+#$ -j y
+#$ -m n
+#$ -l h_data=5G,h_rt=5:00:00
+#$ -t 1-22
+
+f_dir=/u/home/p/parkyj/nobackup-eeskin2/bipolar_hipSTR/orig/filtered
+k_dir=$f_dir/multiallelic
+output_dir=/u/home/p/parkyj/nobackup-eeskin2/bipolar_hipSTR/orig/filtered/multiallelic/denovo
+
+chr=$SGE_TASK_ID
+vcf_file=$f_dir/chr$chr.filtered.vcf.gz
+keep_file=$f_dir/multiallelic/chr$chr.multiallelic.recode.vcf.gz
+
+#create STR list to keep
+zcat $keep_file | grep -v "#" | cut -f1,2 > chr$chr.loci.keep
+#process STR loci
+vcftools --gzvcf $vcf_file --min-alleles 2 --positions chr$chr.loci.keep --recode --out $output_dir/chr$chr.denovo
+
+gzip $output_dir/chr$chr.denovo.recode.vcf
+rm -f chr$chr.loci.keep

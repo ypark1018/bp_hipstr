@@ -1,0 +1,29 @@
+#!/bin/bash
+#$ -V
+#$ -S /bin/bash
+#$ -N denovo
+#$ -cwd
+#$ -o /u/home/p/parkyj/nobackup-eeskin2/bipolar_hipSTR/orig/filtered/multiallelic/denovo/STR/denovo.out
+#$ -e /u/home/p/parkyj/nobackup-eeskin2/bipolar_hipSTR/orig/filtered/multiallelic/denovo/STR/denovo.err
+#$ -j y
+#$ -m ae
+#$ -l h_data=5G,h_rt=2:00:00
+#$ -t 1-22
+
+#extract genotype information from vcf files
+
+chr=$SGE_TASK_ID
+f_dir=/u/home/p/parkyj/nobackup-eeskin2/bipolar_hipSTR/orig/filtered/multiallelic/denovo
+vcf_file=$f_dir/chr$chr.denovo.recode.vcf.gz
+output_dir=/u/home/p/parkyj/nobackup-eeskin2/bipolar_hipSTR/orig/filtered/multiallelic/denovo/STR
+family=/u/home/p/parkyj/nobackup-eeskin2/scripts/python/denovo/FamilyID.conv
+ped=/u/home/p/parkyj/nobackup-eeskin2/scripts/python/denovo/allfamilies.ped
+denovo=/u/home/p/parkyj/nobackup-eeskin2/scripts/python/denovo/denovo.2.py
+
+vcftools --gzvcf $vcf_file --extract-FORMAT-info GT --out $output_dir/chr$chr
+vcftools --gzvcf $vcf_file --extract-FORMAT-info Q --out $output_dir/chr$chr
+
+python $denovo chr$chr.GT.FORMAT $family $ped chr$chr.Q.FORMAT chr$chr > chr$chr.denovo
+
+rm -f chr$chr.GT.FORMAT
+rm -f chr$chr.Q.FORMAT

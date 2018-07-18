@@ -1,0 +1,50 @@
+#!/bin/bash
+#$ -V
+#$ -S /bin/bash
+#$ -N denovo.SNV
+#$ -cwd
+#$ -o /u/home/p/parkyj/nobackup-eeskin2/bipolar_hipSTR/orig/filtered/multiallelic/denovo/SNV/denovo.out
+#$ -e /u/home/p/parkyj/nobackup-eeskin2/bipolar_hipSTR/orig/filtered/multiallelic/denovo/SNV/denovo.err
+#$ -j y
+#$ -m a
+#$ -l h_data=5G,h_rt=5:00:00
+#$ -t 1-289
+
+# -t 1-289
+
+#extract genotype information from vcf files
+
+outliers=bp_outliers
+indexfile=interval.list
+i=-1
+chr=0
+temp=0
+region=`expr $SGE_TASK_ID - 1`
+while IFS=' ', read xx yy;do
+    i=`expr $i + 1`
+    if [ $i == $region ]
+    then
+	chr=$xx
+	temp=$yy
+    fi
+done < $indexfile
+
+f_dir=/u/nobackup/eeskin2/jhsul/bipolar/gvcf_batch_final/snp/chr$chr/qc1
+vcf_file=$f_dir/bp.churchill.hc.454indiv.vep.qc1.snp.chr.$chr.region.$temp.vcf.gz
+output_dir=/u/home/p/parkyj/nobackup-eeskin2/bipolar_hipSTR/orig/filtered/multiallelic/denovo/SNV
+family=/u/home/p/parkyj/nobackup-eeskin2/scripts/python/denovo/FamilyID.conv
+ped=/u/home/p/parkyj/nobackup-eeskin2/scripts/python/denovo/allfamilies.ped
+denovo=/u/home/p/parkyj/nobackup-eeskin2/scripts/python/denovo/denovo.2.py
+
+#remove outliers
+vcftools --gzvcf $vcf_file --remove $outliers --recode --out chr$chr.$temp
+vcf_file=chr$chr.$temp.recode.vcf
+
+vcftools --gzvcf $vcf_file --extract-FORMAT-info GT --out $output_dir/chr$chr.$temp
+vcftools --gzvcf $vcf_file --extract-FORMAT-info Q --out $output_dir/chr$chr.$temp
+
+python $denovo chr$chr.$temp.GT.FORMAT $family $ped chr$chr.$temp.Q.FORMAT chr$chr.$temp > chr$chr.$temp.denovo
+
+rm -f chr$chr.$temp.GT.FORMAT
+rm -f chr$chr.$temp.Q.FORMAT
+rm -f chr$chr.$temp.recode.vcf
