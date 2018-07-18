@@ -1,0 +1,26 @@
+#!/bin/bash
+#$ -V
+#$ -S /bin/bash
+#$ -N indel
+#$ -cwd
+#$ -o /u/home/p/parkyj/nobackup-eeskin2/bipolar_hipSTR/orig/filtered/multiallelic/indel/indel.out
+#$ -e /u/home/p/parkyj/nobackup-eeskin2/bipolar_hipSTR/orig/filtered/multiallelic/indel/indel.err
+#$ -j y
+#$ -m a
+#$ -l h_data=10G,h_rt=20:00:00,highp
+#$ -t 1-22
+
+#extract genotype information from vcf files
+
+chr=$SGE_TASK_ID
+f_dir=/u/home/p/parkyj/nobackup-eeskin2/bipolar_hipSTR/orig/filtered/multiallelic
+vcf_file=$f_dir/chr$chr.multiallelic.recode.vcf.gz
+output_dir=/u/home/p/parkyj/nobackup-eeskin2/bipolar_hipSTR/orig/filtered/multiallelic/indel
+indel=/u/home/p/parkyj/nobackup-eeskin2/scripts/python/indel/indel.py
+indel_data=/u/home/p/parkyj/nobackup-eeskin2/scripts/python/indel/data/chr$chr.indel
+
+zcat $vcf_file | grep -v '#' | cut -f1,2,4,5 > chr$chr.STR
+
+python $indel chr$chr.STR $indel_data > chr$chr.match
+
+#rm -f chr$chr.STR

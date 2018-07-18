@@ -1,0 +1,1 @@
+python compare_STR_indel.py STR.vcf indel.vcf > STR_indel.extendedwindow.txt
