@@ -1,0 +1,22 @@
+#!/bin/bash
+#$ -V
+#$ -S /bin/bash
+#$ -N filter
+#$ -cwd
+#$ -o /u/home/p/parkyj/nobackup-eeskin2/bipolar_lobSTR/filtered/biallelic/chr$TASK_ID.filtered.out
+#$ -e /u/home/p/parkyj/nobackup-eeskin2/bipolar_lobSTR/filtered/biallelic/chr$TASK_ID.filtered.err
+#$ -j y
+#$ -m n
+#$ -l h_data=10G,h_rt=10:00:00
+#$ -t 1-22
+
+f_dir=/u/home/p/parkyj/nobackup-eeskin2/bipolar_lobSTR/filtered
+output_dir=/u/home/p/parkyj/nobackup-eeskin2/bipolar_lobSTR/filtered/biallelic
+
+chr=$SGE_TASK_ID
+vcf_file=$f_dir/chr$chr.filtered.recode.vcf.gz
+
+#process STR loci
+vcftools --vcf $vcf_file --min-alleles 2 --recode --out $output_dir/chr$chr.biallelic
+
+gzip chr$chr.biallelic.recode.vcf

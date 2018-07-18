@@ -1,0 +1,36 @@
+#!/bin/bash
+#$ -V
+#$ -S /bin/bash
+#$ -N filter
+#$ -cwd
+#$ -o /u/home/p/parkyj/nobackup-eeskin2/bipolar_lobSTR/filtered/chr$TASK_ID.filtered.out
+#$ -e /u/home/p/parkyj/nobackup-eeskin2/bipolar_lobSTR/filtered/chr$TASK_ID.filtered.err
+#$ -j y
+#$ -m n
+#$ -l h_data=15G,h_rt=10:00:00
+#$ -t 1-22
+
+f_dir=/u/home/p/parkyj/nobackup-eeskin2/bipolar_lobSTR
+output_dir=/u/home/p/parkyj/nobackup-eeskin2/bipolar_lobSTR/filtered
+
+process=$output_dir/process.py
+chr=$SGE_TASK_ID
+vcf_prefix=$f_dir/chr$chr.allelotype
+
+#process STR loci
+python $process $vcf_prefix.vcf | cut -f1,2 > $output_dir/$chr.tmp
+vcftools --vcf $vcf_prefix.vcf --positions-overlap $output_dir/$chr.tmp --recode --out $output_dir/chr$chr.processed
+rm -f $output_dir/$chr.tmp
+
+
+#filter the vcf file with these parameters
+#--loc-max-ref-length 80 \
+lobSTR_filter_vcf.py --vcf $output_dir/chr$chr.processed.recode.vcf \
+--loc-call-rate 0.95 \
+--loc-cov 5 \
+--loc-log-score 0.95 \
+> $output_dir/chr$chr.tmp
+vcftools --vcf $output_dir/chr$chr.tmp --remove-filtered-all --recode --out $output_dir/chr$chr.filtered
+rm -f $output_dir/chr$chr.tmp $output_dir/chr$chr.processed.recode.vcf
+
+gzip chr$chr.filtered.recode.vcf

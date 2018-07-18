@@ -1,0 +1,1 @@
+grep -v NA$ PedStructSeqID.txt | cut -f1-5 | awk '{if ($5 == "m") {$5 = 1} else {$5 = 2}; if ($3 != 0) {$3 = $1":"$3; $4 = $1":"$4}; print $1"\t"$1":"$2"\t"$3"\t"$4"\t"$5}' > FamilyID.ped

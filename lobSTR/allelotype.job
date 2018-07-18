@@ -1,0 +1,36 @@
+#!/bin/bash
+#$ -V
+#$ -S /bin/bash
+#$ -N allelotype
+#$ -cwd
+#$ -o /u/home/p/parkyj/nobackup-eeskin2/bipolar_lobSTR/chr$TASK_ID.allelotype.out
+#$ -e /u/home/p/parkyj/nobackup-eeskin2/bipolar_lobSTR/chr$TASK_ID.allelotype.err
+#$ -j y
+#$ -m n
+#$ -l h_data=10G,h_rt=200:00:00,highp
+#$ -t 1-22
+
+lobstr=/u/home/p/parkyj/lobSTR-bin-Linux-x86_64-4.0.0/bin/allelotype
+chr=$SGE_TASK_ID
+bams1=/u/nobackup/eeskin2/jhsul/bipolar/processed_BAM_hdd
+bams2=/u/nobackup/eeskin2/jhsul/bipolar/processed_BAMs_icnn
+index_prefix=/u/home/p/parkyj/reference/hg19/hg19_v3.0.2/lobstr_v3.0.2_hg19_ref/lobSTR_
+strinfo=/u/home/p/parkyj/reference/hg19/hg19_v3.0.2/lobstr_v3.0.2_hg19_strinfo.tab
+noise_model=/u/nobackup/eeskin2/jhsul/bipolar/processed_BAM_CR004/new/models/custom_model
+out=/u/home/p/parkyj/nobackup-eeskin2/bipolar_lobSTR/chr$chr.allelotype
+
+$lobstr \
+--command classify \
+--bam $(echo `ls -d -1 $bams1/**/* | grep .bam$` | sed "s/ /,/g"),$(echo `ls -d -1 $bams2/**/* | grep .bam$` | sed "s/ /,/g") \
+--index-prefix $index_prefix \
+--strinfo $strinfo \
+--noise_model $noise_model \
+--chrom chr$chr \
+--verbose \
+--out $out \
+--min-het-freq 0.2 \
+--unit \
+--min-border 5 \
+--min-bp-before-indel 7 \
+--maximal-end-match 15 \
+--min-read-end-match 5 \

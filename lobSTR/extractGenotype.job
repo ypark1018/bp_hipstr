@@ -1,0 +1,22 @@
+#!/bin/bash
+#$ -V
+#$ -S /bin/bash
+#$ -N denovo
+#$ -cwd
+#$ -o /u/home/p/parkyj/nobackup-eeskin2/bipolar_lobSTR/filtered/biallelic/denovo/chr$TASK_ID.filtered.out
+#$ -e /u/home/p/parkyj/nobackup-eeskin2/bipolar_lobSTR/filtered/biallelic/denovo/chr$TASK_ID.filtered.err
+#$ -j y
+#$ -m e
+#$ -l h_data=10G,h_rt=10:00:00
+#$ -t 1-22
+
+#extract genotype information from vcf files
+
+chr=$SGE_TASK_ID
+f_dir=/u/home/p/parkyj/nobackup-eeskin2/bipolar_lobSTR/filtered/biallelic
+vcf_file=$f_dir/chr$chr.filetered.recode.vcf.gz
+output_dir=/u/home/p/parkyj/nobackup-eeskin2/bipolar_lobSTR/filtered/biallelic/denovo
+
+vcftools --gzvcf $vcf_file --extract-FORMAT-info GT --out chr$chr
+
+python denovoTrios.py chr$chr.GT.FORMAT FamilyID.conv FamilyID.ped > chr$chr.denovo
