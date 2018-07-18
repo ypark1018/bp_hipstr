@@ -1,0 +1,82 @@
+library(plyr)
+library(dplyr)   #filter, select
+library(magrittr)  #%<>%
+library(stringr)
+library(stringi)
+library(purrr)     # %>%
+library(functional)
+
+
+#table with allele information
+args <- commandArgs(trailingOnly = TRUE)
+old.str <- read.table(args[1], sep = "\t", header = T)
+
+#pedigree file
+#pedigree <- read.table("pedinfo.txt")
+pedigree <- read.table(args[2])
+
+#individual ID conversion table if needed
+#key <- read.table("old_key")
+key <- read.table(args[3])
+
+sample.names <- colnames(old.str)[-1] %>% str_replace("[[:punct:]]", "-")
+chr.names <- old.str[,1]
+
+#filter the pedigree file for 19 individuals in question
+nineteen.ind <- filter(pedigree, is.element(pedigree$V2, key$V2))
+
+
+old.str.compare <- old.str[,-1]
+colnames(old.str.compare) <- sample.names
+rownames(old.str.compare) <- chr.names
+
+key$V1 <- str_replace(key$V1 , "[[:punct:]]", "-")
+
+change.id <- function(name)
+{
+  return(key$V2[unlist(map(key$V1, `==`, name))])
+}
+
+#change individual IDs
+colnames(old.str.compare) <- map(colnames(old.str.compare), change.id) %>% unlist
+
+#divide pedfile
+l.ped <- as.integer(nrow(old.str.compare)/5000)
+ct <- 1
+ped.file <- list()
+mark.file <- list()
+while(ct <= l.ped)
+{
+  ped.file[[ct]] = old.str.compare[(5000*(ct-1)+1):(5000*ct),]
+  mark.file[[ct]] = rownames(old.str.compare[(5000*(ct-1)+1):(5000*ct),])
+  ct <- ct + 1
+}
+ped.file[[ct]] = old.str.compare[(5000*(ct-1)+1):nrow(old.str.compare),]
+mark.file[[ct]] = rownames(old.str.compare[(5000*(ct-1)+1):nrow(old.str.compare),])
+
+
+#create pedfile
+ct <- 1
+while(ct <= l.ped + 1)
+{
+  converted.str <- t(ped.file[[ct]]) %>% data.frame
+  ordered.converted.str <- converted.str[order(rownames(converted.str)),]
+  nineteen.pedigree <- cbind(nineteen.ind, ordered.converted.str)
+  
+  others <- filter(pedigree, !is.element(pedigree$V2, key$V2))
+  filler <- matrix(data = "0 0", nrow = 31, ncol = ncol(converted.str)) %>% data.frame
+  filler.pedigree <- cbind(others, filler)
+  colnames(filler.pedigree) <- colnames(nineteen.pedigree)
+  final.pedigree <- rbind(nineteen.pedigree, filler.pedigree)
+  final.pedigree[final.pedigree == "NA NA"] <- "0 0"
+  
+  #add x to marker file
+  markers <- c("x", colnames(ordered.converted.str))
+  
+  #output file
+  output.ped <- paste(args[1], ct, "ped", sep = ".")
+  output.marker <- paste(args[1], ct, "ped.marker", sep = ".")
+  write.table(final.pedigree, output.ped, sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
+  write.table(markers, output.marker, quote = FALSE, row.names = FALSE, col.names = FALSE)
+  ct <- ct + 1
+}

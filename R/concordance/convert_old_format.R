@@ -1,0 +1,91 @@
+library(plyr)
+library(dplyr)   #filter, select
+library(magrittr)  #%<>%
+library(stringr)
+library(purrr)     # %>%
+library(functional)
+#library(vadr)
+#library(data.table)
+#setwd("C:/Users/parky/Desktop/leb/bipolar_STR/")
+alleles <- read.table("/u/home/p/parkyj/nobackup-eeskin2/scripts/R/concordance/CONVERTED.old_STR.txt")
+
+alleles.1 <- select(alleles, 1, 2, 3)
+alleles.1$V1 <- paste(alleles.1$V1, "_first_chr", sep="")
+chr1.row <- alleles.1$V1 %>% unique
+chr1.col <- select(alleles, 2) %>% unique %>% reduce(c) %>% sort
+#chr1.names <- rep(chr1.names, 2)
+
+alleles.2 <- select(alleles, 1, 2, 4)
+alleles.2$V1 <- paste(alleles.2$V1, "_second_chr", sep="")
+chr2.row <- alleles.2$V1 %>% unique
+chr2.col <- select(alleles, 2) %>% unique %>% reduce(c) %>% sort
+
+add.missing <- function(missing.array, all.values)
+{
+  if (length(rownames(missing.array)) < length(all.values))
+  {
+    found.key <-  paste(rownames(missing.array), collapse = "|")
+    missing.key <- !grepl(found.key, all.values)
+    add.values <- all.values[missing.key]
+    missing.len <- length(rownames(missing.array))
+    add.len <- length(add.values)
+    endpoint <- missing.len + add.len
+    
+    add.array <- rep(NA, length(add.values)) %>% data.frame
+    rownames(add.array) <- add.values
+    colnames(add.array) <- colnames(missing.array)
+    new.vector <- rbind(missing.array, add.array)
+    #new.vector <- new.vector[order(names(new.vector)),] #added
+    return(new.vector)
+  }
+  else
+  {
+    return(missing.array)
+  }
+}
+add.rownames <- function(missing.array)
+{
+  rownames(missing.array) <- missing.array[,1]
+  return(missing.array)
+}
+
+add.colnames <- function(missing.names, missing.array)
+{
+  missing.array[[missing.names]][1] <- map(missing.array[[missing.names]][1], as.integer) %>% reduce(c)
+  colnames(missing.array[[missing.names]]) <- missing.names
+  return(missing.array[[missing.names]])
+}
+
+sort.name <- function(arr)
+{
+  return(arr[order(rownames(arr)),])
+}
+
+alleles.1.split <- split(alleles.1, alleles$V2) %>% map(add.rownames) %>% map(select, 3)
+c.names <- names(alleles.1.split)
+alleles.1.split <- map(names(alleles.1.split), add.colnames, alleles.1.split) %>% map(add.missing, chr1.row) %>% laply(sort.name) %>% data.frame
+rownames(alleles.1.split) <- c.names
+colnames(alleles.1.split) <- sort(chr1.row)
+#test.1 <- split(alleles.1, alleles$V2) %>% map(add.rownames) %>% map(select, 3)
+#test.2 <- map(names(test.1), add.colnames, test.1) %>% map(add.missing, chr1.row)
+#test.3 <- laply(test.2, sort.name)
+
+#map(test.2, inner_join)
+
+
+alleles.2.split <- split(alleles.2, alleles$V2) %>% map(add.rownames) %>% map(select, 3)
+c.names <- names(alleles.2.split)
+alleles.2.split <- map(names(alleles.2.split), add.colnames, alleles.2.split) %>% map(add.missing, chr2.row) %>% laply(sort.name) %>% data.frame
+rownames(alleles.2.split) <- c.names
+colnames(alleles.2.split) <- sort(chr2.row)
+
+alleles.combined <- cbind(alleles.1.split, alleles.2.split)
+old.data <- alleles.combined[order(rownames(alleles.combined)), order(colnames(alleles.combined))] %>% data.frame
+old.data <- old.data[!(rownames(old.data) == "D1S180" | rownames(old.data) == "D1S230"),]
+write.table(old.data, "old_data.txt")
+
+#old.compare <- t(old.data) %>% apply(2, is.na) %>% apply(2, which) %>% map(length) %>% data.frame %>% t
+
+
+
+
