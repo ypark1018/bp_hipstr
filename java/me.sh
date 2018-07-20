@@ -1,1 +1,0 @@
-for x in `seq 1 22`; do zcat chr$x/*.level.1.pedcheck.err.gz | grep "GENOTYPE ERROR: Pedigree" >> mendel.errors; done
